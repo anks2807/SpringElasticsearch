@@ -1,12 +1,10 @@
 package com.elasticsearch.demo.documents;
 
 import lombok.Data;
-import org.springframework.data.elasticsearch.annotations.Document;
 
 import java.util.Date;
 
 @Data
-@Document(indexName = "ecommerce_data")
 public class ECommerceData {
 
     private Long id;
