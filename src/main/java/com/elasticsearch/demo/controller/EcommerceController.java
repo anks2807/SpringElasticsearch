@@ -12,8 +12,8 @@ public class EcommerceController {
     @Autowired
     private EcommerceService ecommerceService;
 
-    @PostMapping(value = "/ingest-bulk-data")
-    public ReturnMessageDto ingestBulkData() {
+    @PostMapping(value = "/ingest-ecommerce-data")
+    public ReturnMessageDto ingestEcommerceData() {
         return ecommerceService.ingestBulkData();
     }
 }

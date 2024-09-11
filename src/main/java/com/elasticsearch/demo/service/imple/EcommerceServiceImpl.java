@@ -1,9 +1,10 @@
 package com.elasticsearch.demo.service.imple;
 
-import com.elasticsearch.demo.DTO.ECommerceDto;
+
 import com.elasticsearch.demo.DTO.ReturnMessageDto;
 import com.elasticsearch.demo.documents.ECommerceData;
 import com.elasticsearch.demo.service.EcommerceService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -15,14 +16,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EcommerceServiceImpl implements EcommerceService {
@@ -31,34 +35,46 @@ public class EcommerceServiceImpl implements EcommerceService {
     private String eCommerceIndex;
 
     @Autowired
-    private RestHighLevelClient restHighLevelClient;
+    private RestHighLevelClient elasticsearchClient;
+
+    @Autowired
+    private ResourceLoader resourceLoader;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(EcommerceServiceImpl.class);
 
     @Override
     public ReturnMessageDto ingestBulkData() {
-        List<ECommerceData> eCommerceDtos = readCSV();
+        List<ECommerceData> eCommerceDtos = null;
+        try {
+            eCommerceDtos = loadData(resourceLoader.getResource("classpath:ecommerce_data.csv").getFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         BulkRequest bulkRequest = new BulkRequest();
         int startIndex = 0;
         int batchSize = 10000;
         int endIndex = batchSize;
-        while(endIndex < eCommerceDtos.size()) {
+        while(endIndex <= eCommerceDtos.size()) {
             for(int i = startIndex; i < endIndex; i++) {
-                IndexRequest indexRequest = new IndexRequest(eCommerceIndex, "_doc", String.valueOf(i));
-                indexRequest.source(eCommerceDtos.get(i));
+                IndexRequest indexRequest = new IndexRequest(eCommerceIndex).id(String.valueOf(i)).source(objectMapper.convertValue(eCommerceDtos.get(i), Map.class));
                 bulkRequest.add(indexRequest);
             }
 
-            try{
-                restHighLevelClient.bulk(bulkRequest);
-            }catch (IOException ioException) {
-                logger.error(ioException.getMessage());
-            }
-            bulkRequest = new BulkRequest();
 
+            try{
+                elasticsearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+            }catch (Exception exception) {
+                logger.error(exception.getMessage());
+            }
+            if (eCommerceDtos.size() - endIndex == 0) {
+                break;
+            }
             if (eCommerceDtos.size() - endIndex < batchSize) {
-                endIndex = eCommerceDtos.size() - endIndex;
-                startIndex = eCommerceDtos.size() - startIndex;
+                endIndex = eCommerceDtos.size();
+                continue;
             }
             startIndex = startIndex + batchSize;
             endIndex = endIndex + batchSize;
@@ -67,12 +83,11 @@ public class EcommerceServiceImpl implements EcommerceService {
         return new ReturnMessageDto("Data ingested successfully", 200);
     }
 
-    private static List<ECommerceData> readCSV() {
-        String path = "D:\\archive_1\\data.csv";
+    private static List<ECommerceData> loadData(File file) {
         SimpleDateFormat sdf = new SimpleDateFormat("M/d/yyyy H:m");
         List<ECommerceData> eCommerceDtos = null;
         try (
-                BufferedReader br = new BufferedReader(new FileReader(path));
+                BufferedReader br = new BufferedReader(new FileReader(file));
                 CSVParser parser = CSVFormat.DEFAULT.withDelimiter(',').withHeader().parse(br);
         ) {
             eCommerceDtos = new ArrayList<>();

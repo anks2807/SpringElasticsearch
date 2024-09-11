@@ -11,16 +11,27 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ElasticsearchRestClient {
+
     @Value("${elasticsearch.host}")
-    private String host;
+    private String hostName;
+
     @Value("${elasticsearch.port}")
     private int port;
-    @Value("${elasticsearch.connection.request.timeout}")
-    private Integer connectionRequestTimeout;
+
+
 
     @Bean
     public RestHighLevelClient elasticsearchClient() {
-        RestClientBuilder clientBuilder = RestClient.builder(new HttpHost(host, port, "http"));
+        RestClientBuilder clientBuilder = RestClient.builder(new HttpHost(hostName, port, "http"))
+                .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
+                    @Override
+                    public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
+                        return requestConfigBuilder
+                                .setConnectionRequestTimeout(60000);
+                    }
+                });
         return new RestHighLevelClient(clientBuilder);
     }
+
+
 }
