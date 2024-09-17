@@ -1,14 +1,16 @@
 package com.elasticsearch.demo.service.imple;
 
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
 import com.elasticsearch.demo.DTO.ReturnMessageDto;
+import com.elasticsearch.demo.config.ElasticsearchRestClient;
 import com.elasticsearch.demo.documents.ECommerceData;
 import com.elasticsearch.demo.service.EcommerceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -24,7 +26,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -35,14 +41,15 @@ public class EcommerceServiceImpl implements EcommerceService {
     @Value("${ecommerce.index}")
     private String eCommerceIndex;
     @Autowired
-    private RestHighLevelClient elasticsearchClient;
+    private ElasticsearchClient elasticsearchClient;
     @Autowired
     private ResourceLoader resourceLoader;
     @Autowired
     private ObjectMapper objectMapper;
 
     private static List<ECommerceData> loadData(File file) {
-        SimpleDateFormat sdf = new SimpleDateFormat("M/d/yyyy H:m");
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("M/d/yyyy H:mm");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         List<ECommerceData> eCommerceDtos = null;
         try (
                 BufferedReader br = new BufferedReader(new FileReader(file));
@@ -58,7 +65,7 @@ public class EcommerceServiceImpl implements EcommerceService {
                 eCommerceDto.setCustomerID(record.get("CustomerID") == null || record.get("CustomerID").length() == 0 ? 0 : Long.parseLong(record.get("CustomerID")));
                 eCommerceDto.setStockCode(record.get("StockCode"));
                 eCommerceDto.setUnitPrice(record.get("UnitPrice") == null || record.get("UnitPrice").length() == 0 ? 0 : Double.parseDouble(record.get("UnitPrice")));
-                eCommerceDto.setInvoiceDate(sdf.parse(record.get("InvoiceDate")));
+                eCommerceDto.setInvoiceDate(LocalDateTime.parse(record.get("InvoiceDate"), inputFormatter).format(outputFormatter));
                 eCommerceDtos.add(eCommerceDto);
             }
         } catch (Exception e) {
@@ -75,19 +82,21 @@ public class EcommerceServiceImpl implements EcommerceService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        BulkRequest bulkRequest = new BulkRequest();
+        BulkRequest.Builder bulkRequest = null;
         int startIndex = 0;
         int batchSize = 10000;
         int endIndex = batchSize;
         while (endIndex <= eCommerceDtos.size()) {
+            bulkRequest = new BulkRequest.Builder();
             for (int i = startIndex; i < endIndex; i++) {
-                IndexRequest indexRequest = new IndexRequest(eCommerceIndex).id(String.valueOf(i)).source(objectMapper.convertValue(eCommerceDtos.get(i), Map.class));
-                bulkRequest.add(indexRequest);
+                int finalI = i;
+                ECommerceData finalECommerceDto = eCommerceDtos.get(i);
+                bulkRequest.operations(op -> op.index(idx -> idx.index(eCommerceIndex).id(String.valueOf(finalI)).document(finalECommerceDto)));
             }
 
 
             try {
-                elasticsearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+                elasticsearchClient.bulk(bulkRequest.build());
             } catch (Exception exception) {
                 logger.error(exception.getMessage());
             }

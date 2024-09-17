@@ -1,5 +1,9 @@
 package com.elasticsearch.demo.config;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.client.RestClient;
@@ -21,17 +25,21 @@ public class ElasticsearchRestClient {
 
 
     @Bean
-    public RestHighLevelClient elasticsearchClient() {
-        RestClientBuilder clientBuilder = RestClient.builder(new HttpHost(hostName, port, "http"))
-                .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-                    @Override
-                    public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
-                        return requestConfigBuilder
-                                .setConnectionRequestTimeout(60000);
-                    }
-                });
-        return new RestHighLevelClient(clientBuilder);
+    public ElasticsearchClient elasticsearchClient() {
+        RestClient httpClient = RestClient.builder(
+                new HttpHost("localhost", 9200)
+        ).build();
+
+        ElasticsearchTransport transport = new RestClientTransport(
+                httpClient,
+                new JacksonJsonpMapper()
+        );
+
+        ElasticsearchClient esClient = new ElasticsearchClient(transport);
+        return esClient;
     }
+
+
 
 
 }
