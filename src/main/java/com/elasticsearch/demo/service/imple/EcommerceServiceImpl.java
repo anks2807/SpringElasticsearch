@@ -4,16 +4,12 @@ package com.elasticsearch.demo.service.imple;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import com.elasticsearch.demo.DTO.ReturnMessageDto;
-import com.elasticsearch.demo.config.ElasticsearchRestClient;
 import com.elasticsearch.demo.documents.ECommerceData;
 import com.elasticsearch.demo.service.EcommerceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,14 +21,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
+import java.util.Random;
 
 @Service
 public class EcommerceServiceImpl implements EcommerceService {
@@ -50,6 +43,7 @@ public class EcommerceServiceImpl implements EcommerceService {
     private static List<ECommerceData> loadData(File file) {
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("M/d/yyyy H:mm");
         DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        Random random = new Random();
         List<ECommerceData> eCommerceDtos = null;
         try (
                 BufferedReader br = new BufferedReader(new FileReader(file));
@@ -62,9 +56,9 @@ public class EcommerceServiceImpl implements EcommerceService {
                 eCommerceDto.setInvoiceNo(record.get("InvoiceNo"));
                 eCommerceDto.setQuantity(record.get("Quantity") == null || record.get("Quantity").length() == 0 ? 0 : Long.parseLong(record.get("Quantity")));
                 eCommerceDto.setDescription(record.get("Description"));
-                eCommerceDto.setCustomerID(record.get("CustomerID") == null || record.get("CustomerID").length() == 0 ? 0 : Long.parseLong(record.get("CustomerID")));
+                eCommerceDto.setCustomerID(record.get("CustomerID") == null || record.get("CustomerID").length() == 0 ? random.nextLong() : Long.parseLong(record.get("CustomerID")));
                 eCommerceDto.setStockCode(record.get("StockCode"));
-                eCommerceDto.setUnitPrice(record.get("UnitPrice") == null || record.get("UnitPrice").length() == 0 ? 0 : Double.parseDouble(record.get("UnitPrice")));
+                eCommerceDto.setUnitPrice(record.get("UnitPrice") == null || record.get("UnitPrice").length() == 0 || Double.parseDouble(record.get("UnitPrice")) <= 0 ? random.nextDouble() : Double.parseDouble(record.get("UnitPrice")));
                 eCommerceDto.setInvoiceDate(LocalDateTime.parse(record.get("InvoiceDate"), inputFormatter).format(outputFormatter));
                 eCommerceDtos.add(eCommerceDto);
             }
