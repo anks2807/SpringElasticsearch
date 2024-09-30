@@ -1,0 +1,542 @@
+GET news_headlines/_search
+
+GET news_headlines/_search
+{
+  "track_total_hits": true
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "range": {
+      "date": {
+        "gte": "2020-01-01",
+        "lte": "2024-08-15"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "size": 0,
+  "aggs": {
+    "by_category": {
+      "terms": {
+        "field": "category"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match": {
+      "category": "POLITICS"
+    }
+  }, 
+  "aggs": {
+    "popular_in_entertainment": {
+      "significant_text": {
+        "field": "headline"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match": {
+      "headline": {
+        "query": "Khloe Kardashian Kendall Jenner"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match": {
+      "headline": {
+        "query": "Khloe Kardashian Kendall Jenner",
+        "operator": "and"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match": {
+      "headline": {
+        "query": "Khloe Kardashian Kendall Jenner",
+        "minimum_should_match": "3"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match": {
+      "headline": {
+        "query": "Shape of you"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match_phrase": {
+      "headline": {
+        "query": "Shape of you"
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "Michelle Obama",
+      "fields": [
+        "headline^2",
+        "authors^2",
+        "short_description"
+        ]
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "party planning",
+      "fields": [
+        "headline^2",
+        "short_description"
+        ],
+        "type": "phrase"
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "match_phrase": {
+      "headline": "Michelle Obama"
+    }
+  }, 
+  "aggs": {
+    "category_contains_michelle_obama": {
+      "terms": {
+        "field": "category",
+        "size": 10
+      }
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "category": "POLITICS"
+          }
+        },
+        {
+          "match_phrase": {
+            "headline": "Michelle Obama"
+          }
+        }
+      ]
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_phrase": {
+            "headline": "Michelle Obama"
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "match": {
+            "category": "WEDDINGS"
+          }
+        }
+      ]
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_phrase": {
+            "headline": "Michelle Obama"
+          }
+        }
+      ],
+      "should": [
+        {
+          "match": {
+            "category": "BLACK VOICES"
+          }
+        }
+      ]
+    }
+  }
+}
+
+GET news_headlines/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_phrase": {
+            "headline": "Michelle Obama"
+          }
+        }
+      ],
+      "filter": [
+        {
+          "range": {
+            "date": {
+              "gte": "2015-01-01",
+              "lte": "2015-12-31"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+PUT ecommerce_data
+{
+  "mappings": {
+    "properties": {
+      "country": {
+        "type": "keyword"
+      },
+      "customerID": {
+        "type": "long"
+      },
+      "description": {
+        "type": "text"
+      },
+      "invoiceDate": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "invoiceNo": {
+        "type": "keyword"
+      },
+      "quantity": {
+        "type": "long"
+      },
+      "stockCode": {
+        "type": "keyword"
+      },
+      "unitPrice": {
+        "type": "double"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0, 
+  "aggs": {
+    "sum_of_unit_price": {
+      "sum": {
+        "field": "UnitPrice"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0, 
+  "aggs": {
+    "lowest_of_unit_price": {
+      "min": {
+        "field": "UnitPrice"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0, 
+  "aggs": {
+    "highest_of_unit_price": {
+      "max": {
+        "field": "UnitPrice"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0, 
+  "aggs": {
+    "average_of_unit_price": {
+      "avg": {
+        "field": "UnitPrice"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0, 
+  "aggs": {
+    "stats_of_unit_price": {
+      "stats": {
+        "field": "UnitPrice"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0, 
+  "aggs": {
+    "unique_customers": {
+      "cardinality": {
+        "field": "CustomerID"
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0,
+  "aggs": {
+    "transaction_by_month": {
+      "date_histogram": {
+        "field": "InvoiceDate",
+        "interval": "1M",
+        "order": {
+           "_key": "desc"
+        }
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0,
+  "aggs": {
+    "transaction_per_custom_price_range": {
+      "range": {
+        "field": "UnitPrice",
+        "ranges": [
+          {
+            "to": 50
+          },
+          {
+            "from": 50,
+            "to": 100
+          },
+          {
+            "from": 100
+          }
+        ]
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0,
+  "aggs": {
+    "top_5_customers_with_highest_purchase": {
+      "terms": {
+        "field": "CustomerID",
+        "size": 5
+      }
+    }
+  }
+}
+GET ecommerce_data/_search
+{
+  "size": 0,
+  "aggs": {
+    "lowest_10_customers_with_minimum_purchase": {
+      "terms": {
+        "field": "CustomerID",
+        "size": 10,
+        "order": {
+          "_count": "asc"
+        }
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0,
+  "aggs": {
+    "daily_transaction": {
+      "date_histogram": {
+        "field": "InvoiceDate",
+        "interval": "day"
+      },
+      "aggs": {
+        "daily_revenue": {
+          "sum": {
+            "script": "doc['UnitPrice'].value * doc['Quantity'].value"
+          }
+        }
+      }
+    }
+  }
+}
+
+GET ecommerce_data/_search
+{
+  "size": 0,
+  "aggs": {
+    "daily_transaction": {
+      "date_histogram": {
+        "field": "InvoiceDate",
+        "interval": "day"
+      },
+      "aggs": {
+        "daily_revenue": {
+          "sum": {
+            "script": "doc['UnitPrice'].value * doc['Quantity'].value"
+          }
+        },
+        "unique_customers": {
+          "cardinality": {
+            "field": "CustomerID"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+PUT products
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "autocomplete": {
+          "tokenizer": "autocomplete",
+          "filter": [
+            "lowercase"
+          ]
+        },
+        "autocomplete_search": {
+          "tokenizer": "lowercase"
+        }
+      },
+      "tokenizer": {
+        "autocomplete": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 10,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text",
+        "analyzer": "autocomplete",
+        "search_analyzer": "autocomplete_search"
+      },
+      "id": {
+        "type": "long"
+      },
+      "price": {
+        "type": "double"
+      },
+      "in_stock": {
+        "type": "integer"
+      },
+      "sold": {
+        "type": "integer"
+      },
+      "tags": {
+        "type": "text",
+        "fields": {
+          "raw": {
+            "type": "keyword"
+          }
+        }
+      },
+      "description": {
+        "type": "text"
+      },
+      "is_active": {
+        "type": "boolean"
+      },
+      "created": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      }
+    }
+  }
+}
+
+POST products/_analyze
+{
+  "analyzer": "autocomplete",
+  "text": "2 Quick Foxes."
+}
+
+GET products/_search
+{
+  "query": {
+    "match": {
+      "name": {
+        "query": "Te"
+      }
+    }
+  }
+}
